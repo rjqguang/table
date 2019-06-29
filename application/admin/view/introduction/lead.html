@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>layuiAdmin 网站用户</title>
+    {include file="Common/header"}
+</head>
+<body>
+<div style="width: 90%;margin: 50px auto 0;">
+    <div class="layui-upload">
+        <button type="button" class="layui-btn layui-btn-normal" id="test8">选择文件</button>
+        <button type="button" class="layui-btn" id="test9">开始上传</button>
+    </div>
+</div>
+
+
+
+{include file="Common/footer"}
+
+<script>
+    layui.use('upload', function() {
+        var $ = layui.jquery
+            , upload = layui.upload;
+        //选完文件后不自动上传
+        upload.render({
+            elem: '#test8'
+            , url: "{:url('introduction/lead')}"
+            , auto: false
+            ,accept:'file'
+            //,multiple: true
+            , bindAction: '#test9'
+            , done: function (res) {
+                if (res.code == 1) {
+                    layer.msg(res.msg,{
+                        icon:6,
+                        time:2000,
+                    })
+                }else{
+                    layer.msg(res.msg,{
+                        icon:5,
+                        time:2000,
+                    })
+                }
+            }
+        });
+    })
+</script>
+</body>
+</html>

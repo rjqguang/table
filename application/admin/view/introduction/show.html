@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>layuiAdmin 网站用户</title>
+    {include file="Common/header"}
+</head>
+<body>
+<!--右侧-->
+<div style="width: 95%;margin: 50px auto 0;text-align: center;">
+    <form class="layui-form" action="">
+        <div class="layui-form-item">
+            <div class="layui-input-inline">
+                <select name="name" id="name" lay-filter="name">
+                    <option value="">请选择名字</option>
+                    {present name="ti_name"}
+                    {foreach $ti_name as $v}
+                    <option value="{$v}">{$v}</option>
+                    {/foreach}
+                    {/present}
+                </select>
+            </div>
+            <div class="layui-input-inline" lay-filter="inline1">
+                <select name="time" id="time" lay-filter="time">
+                    <option value="">请选择年份</option>
+                </select>
+            </div>
+            <div class="layui-input-inline">
+                <select name="weight" id="weight">
+                    <option value="">请选择重量</option>
+                </select>
+            </div>
+            <div class="layui-input-block" style="width: 100px;float: left;margin-left: 0px;">
+                <input type="text" name="serial"  placeholder="请输入编号" oninput = "value=value.replace(/[^\d]/g,'')" autocomplete="off" class="layui-input">
+            </div>
+            <div class="layui-input-block" style="float: left;width:0;margin-left: 10px;">
+                <!--<button class="layui-btn" lay-submit lay-filter="formDemo">立即查询</button>-->
+                <input type="button" class="layui-btn" lay-submit lay-filter="formDemo" value="立即查询">
+            </div>
+        </div>
+    </form>
+</div>
+<table class="layui-table" style="width: 95%;margin: 50px auto 0">
+    <colgroup>
+        <col width="150">
+        <col width="200">
+        <col width="200">
+        <col width="200">
+        <col width="200">
+        <col width="200">
+        <col width="200">
+        <col width="200">
+    </colgroup>
+    <thead>
+    <tr>
+        <th>编号</th>
+        <th>顾客信息</th>
+        <th>体验店</th>
+        <th>付款方式</th>
+        <th>品鉴中心</th>
+        <th>茶叶名称</th>
+        <th>年份</th>
+        <th>规格</th>
+    </tr>
+    </thead>
+    <tbody id="tbody">
+    <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+    </tbody>
+</table>
+
+
+
+
+{include file="Common/footer"}
+<!-- 注意：如果你直接复制所有代码到本地，上述js路径需要改成你本地的 -->
+
+<script>
+    layui.use('form',function(){
+        var form = layui.form;
+        var layer = layui.layer;
+        var layedit = layui.layedit;
+
+        $(document).ready(function() {
+            // select下拉框选中触发事件
+            //使用名字获取时间
+            form.on("select(name)", function(data){
+                $.ajax({
+                    type:'post',
+                    url:'ti_time',
+                    data:'cond='+data.value,
+                    dataType:'json',
+                    success:function (call) {
+                        //console.log(data.value);
+                        var datas = JSON.parse(call);//数据转换
+                        //console.log(datas);
+                        $('#time').empty();//清空
+                        for (var i in datas){
+                            var $content = $("<option value='"+data.value+'-'+datas[i]+"'>"+datas[i]+"</option>");
+                            $('#time').append($content);    //添加
+                        }
+                        form.render('select');//我也不知道干嘛的
+                    }
+                })
+
+            });
+            //使用时间获取重量
+            form.on('select(time)',function(data){
+                $.ajax({
+                    type:'post',
+                    url:'ti_weight',
+                    data:'cond='+data.value,
+                    dataType:'json',
+                    success:function(call){
+                        var datas = JSON.parse(call);//数据转换
+                        //console.log(datas);
+                        $("#weight").empty();
+                        for(var i in datas){
+                            var $content = $("<option value='"+datas[i].ti_title+"'>"+datas[i].ti_weight+"</option>");
+                            $('#weight').append($content);
+                        }
+                        form.render('select');
+                    }
+                })
+            })
+
+        });
+        form.on('submit(formDemo)',function(data){
+            //console.log(data.field);
+            var weight = data.field.weight;
+            if (weight == ''){
+                layer.msg('请先选择名字');
+            }else{
+                $.ajax({
+                    type:'post',
+                    url:'information',
+                    data:{"weight":data.field.weight,"serial":data.field.serial},
+                    dataType:'json',
+                    success:function(call){
+                        var message =  JSON.parse(call);
+                        if (message.state == 1){
+                            one(message);
+                        }else if (message.state == 2){
+                          	layer.msg('库存：'+message.cash);
+                            more(message)
+                        } else{
+                            layer.msg('待售出');
+                        }
+                    }
+                })
+            }
+        })
+    })
+    function one(data) {
+        var tbody = $('#tbody');
+        tbody.html("");
+        var html = '';
+        html += "<tr>";
+        html += "<td>"+data.message.info_serial+"</td>"; //编号
+        html += "<td>"+data.message.info_customer+"</td>"; //顾客信息
+        html += "<td>"+data.message.info_experence+"</td>"; //体验店
+        html += "<td>"+data.message.info_means+"</td>"; //付款方式
+        html += "<td>"+data.message.info_tasting+"</td>"; //品鉴中心
+        html += "<td>"+data.client.ti_name+"</td>"; //茶叶名称
+        html += "<td>"+data.client.ti_time+"</td>"; //年份
+        html += "<td>"+data.client.ti_weight+"</td>"; //规格
+        html += "</tr>";
+        tbody.append(html);
+    }
+    function more(data){
+        var tbody = $('#tbody');
+        tbody.html("");
+        var html = '';
+        for (let i in data.message) {
+            html += "<tr>";
+            html += "<td>"+data.message[i].info_serial+"</td>"; //编号
+            html += "<td>"+data.message[i].info_customer+"</td>"; //顾客信息
+            html += "<td>"+data.message[i].info_experence+"</td>"; //体验店
+            html += "<td>"+data.message[i].info_means+"</td>"; //付款方式
+            html += "<td>"+data.message[i].info_tasting+"</td>"; //品鉴中心
+            html += "<td>"+data.client.ti_name+"</td>"; //茶叶名称
+            html += "<td>"+data.client.ti_time+"</td>"; //年份
+            html += "<td>"+data.client.ti_weight+"</td>"; //规格
+            html += "</tr>";
+        }
+        tbody.append(html);
+    }
+</script>
+
+</body>
+</html>
